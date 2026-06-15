@@ -28,7 +28,18 @@ jobs:
 
       - name: Build Windows executable
         shell: pwsh
+        working-directory: ${{ github.workspace }}
         run: .\scripts\package_windows.ps1
+
+      - name: Verify release asset
+        shell: pwsh
+        working-directory: ${{ github.workspace }}
+        run: |
+          $asset = "dist\KickaboutBeta-windows.zip"
+          if (-not (Test-Path -LiteralPath $asset)) {
+            throw "Missing release asset: $asset"
+          }
+          Get-Item -LiteralPath $asset | Format-List FullName,Length
 
       - name: Upload workflow artifact
         uses: actions/upload-artifact@v4

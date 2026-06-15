@@ -1,12 +1,8 @@
 $ErrorActionPreference = "Stop"
+Set-StrictMode -Version Latest
 
-$Root = Resolve-Path -LiteralPath (Join-Path $PSScriptRoot "..")
-Set-Location $Root
-$TempRoot = Join-Path ([System.IO.Path]::GetTempPath()) ("kickabout-beta-build-" + [System.Guid]::NewGuid().ToString("N"))
-$TempBuild = Join-Path $TempRoot "build"
-$TempDist = Join-Path $TempRoot "dist"
-$TempSpec = Join-Path $TempRoot "spec"
-New-Item -ItemType Directory -Force -Path $TempBuild, $TempDist, $TempSpec | Out-Null
+$Root = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot "..")).ProviderPath
+Set-Location -LiteralPath $Root
 
 $RequiredPaths = @(
     "assets\kickabout-named-assets",
@@ -22,33 +18,51 @@ foreach ($Path in $RequiredPaths) {
     }
 }
 
-python -m PyInstaller `
-    --noconfirm `
-    --clean `
-    --onefile `
-    --name "KickaboutBeta" `
-    --workpath $TempBuild `
-    --distpath $TempDist `
-    --specpath $TempSpec `
-    --add-data "$Root\assets;assets" `
-    --add-data "$Root\research\animation-decoded;research\animation-decoded" `
-    main.py
+$DistDir = "dist"
+$BuildDir = "build"
+$Exe = Join-Path $DistDir "KickaboutBeta.exe"
+$Zip = Join-Path $DistDir "KickaboutBeta-windows.zip"
+$BuildCache = Join-Path $BuildDir "KickaboutBeta"
+
+New-Item -ItemType Directory -Force -Path $DistDir, $BuildDir | Out-Null
+Remove-Item -LiteralPath $BuildCache -Recurse -Force -ErrorAction SilentlyContinue
+Remove-Item -LiteralPath $Exe -Force -ErrorAction SilentlyContinue
+Remove-Item -LiteralPath $Zip -Force -ErrorAction SilentlyContinue
+
+$PyInstallerArgs = @(
+    "-m", "PyInstaller",
+    "--noconfirm",
+    "--clean",
+    "--onefile",
+    "--name", "KickaboutBeta",
+    "--workpath", $BuildDir,
+    "--distpath", $DistDir,
+    "--specpath", ".",
+    "--add-data", "assets;assets",
+    "--add-data", "research\animation-decoded;research\animation-decoded",
+    "main.py"
+)
+
+& python @PyInstallerArgs
 
 if ($LASTEXITCODE -ne 0) {
     throw "PyInstaller build failed with exit code $LASTEXITCODE"
 }
 
-$Zip = Join-Path $Root "dist\KickaboutBeta-windows.zip"
-New-Item -ItemType Directory -Force -Path (Split-Path -Parent $Zip) | Out-Null
-if (Test-Path -LiteralPath $Zip) {
-    try {
-        Remove-Item -LiteralPath $Zip -Force
-    }
-    catch {
-        $Stamp = Get-Date -Format "yyyyMMdd-HHmmss"
-        $Zip = Join-Path $Root "dist\KickaboutBeta-windows-$Stamp.zip"
-    }
+if (-not (Test-Path -LiteralPath $Exe)) {
+    throw "PyInstaller did not create expected executable: $Exe"
 }
 
-Compress-Archive -Path (Join-Path $TempDist "KickaboutBeta.exe") -DestinationPath $Zip
-Write-Host "Built $Zip"
+$ExeInfo = Get-Item -LiteralPath $Exe
+if ($ExeInfo.Length -lt 1MB) {
+    throw "Built executable is unexpectedly small ($($ExeInfo.Length) bytes): $Exe"
+}
+
+Compress-Archive -LiteralPath $Exe -DestinationPath $Zip -Force
+
+if (-not (Test-Path -LiteralPath $Zip)) {
+    throw "Failed to create release zip: $Zip"
+}
+
+$ZipInfo = Get-Item -LiteralPath $Zip
+Write-Host "Built $Zip ($($ZipInfo.Length) bytes) from $Exe ($($ExeInfo.Length) bytes)"
