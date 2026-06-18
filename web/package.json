@@ -13,6 +13,8 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
+    "@types/node": "^22.10.1",
+    "@types/ws": "^8.5.13",
     "@vitejs/plugin-basic-ssl": "^1.1.0",
     "concurrently": "^8.2.2",
     "phaser": "^3.90.0",
@@ -20,9 +22,5 @@
     "typescript": "^5.7.2",
     "vite": "^6.0.3",
     "ws": "^8.18.0"
-  },
-  "devDependencies": {
-    "@types/node": "^22.10.1",
-    "@types/ws": "^8.5.13"
   }
 }
