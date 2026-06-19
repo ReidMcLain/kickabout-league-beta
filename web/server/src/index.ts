@@ -9,6 +9,7 @@ import { Simulation, createSimulation, setPlaying, setSimulationInput, stepSimul
 
 type Client = {
   id: string;
+  displayName: string | null;
   socket: WebSocket;
   roomCode: string | null;
   side: Team | null;
@@ -35,7 +36,7 @@ const server = http.createServer((req, res) => {
 const wss = new WebSocketServer({ server });
 
 wss.on("connection", (socket) => {
-  const client: Client = { id: randomUUID(), socket, roomCode: null, side: null };
+  const client: Client = { id: randomUUID(), displayName: null, socket, roomCode: null, side: null };
   clients.set(socket, client);
 
   socket.on("message", (raw) => {
@@ -70,20 +71,24 @@ server.listen(PORT, () => {
 
 const handleMessage = (client: Client, message: ClientMessage) => {
   if (message.type === "create_room") {
+    const displayName = normalizeDisplayName(message.displayName);
+    if (!displayName) return send(client, { type: "room_error", reason: "Display name required" });
     const code = createRoomCode();
     const room: Room = { code, clients: new Map(), sim: createSimulation(), lastEmptyAt: null };
     rooms.set(code, room);
-    joinRoom(client, room, "blue");
+    joinRoom(client, room, "blue", displayName);
     send(client, { type: "room_created", code, playerId: client.id, side: "blue" });
     return;
   }
 
   if (message.type === "join_room") {
+    const displayName = normalizeDisplayName(message.displayName);
+    if (!displayName) return send(client, { type: "room_error", reason: "Display name required" });
     const code = message.code.trim().toUpperCase();
     const room = rooms.get(code);
     if (!room) return send(client, { type: "room_error", reason: "Room not found" });
     if (room.clients.has("red")) return send(client, { type: "room_error", reason: "Room is full" });
-    joinRoom(client, room, "red");
+    joinRoom(client, room, "red", displayName);
     send(client, { type: "joined", code, playerId: client.id, side: "red" });
     setPlaying(room.sim);
     broadcast(room, { type: "match_start", seed: Date.now(), side: "blue" }, "blue");
@@ -107,8 +112,9 @@ const handleMessage = (client: Client, message: ClientMessage) => {
   }
 };
 
-const joinRoom = (client: Client, room: Room, side: Team) => {
+const joinRoom = (client: Client, room: Room, side: Team, displayName: string) => {
   removeClient(client);
+  client.displayName = displayName;
   client.roomCode = room.code;
   client.side = side;
   room.clients.set(side, client);
@@ -123,6 +129,7 @@ const removeClient = (client: Client) => {
     broadcast(room, { type: "player_disconnected" });
     if (room.clients.size === 0) room.lastEmptyAt = Date.now();
   }
+  client.displayName = null;
   client.roomCode = null;
   client.side = null;
 };
@@ -151,6 +158,12 @@ const createRoomCode = () => {
     code = Array.from({ length: 6 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
   } while (rooms.has(code));
   return code;
+};
+
+const normalizeDisplayName = (value: unknown) => {
+  if (typeof value !== "string") return null;
+  const displayName = value.trim().replace(/\s+/g, " ").slice(0, 18);
+  return displayName.length > 0 ? displayName : null;
 };
 
 function serveStatic(req: http.IncomingMessage, res: http.ServerResponse) {

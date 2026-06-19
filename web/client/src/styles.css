@@ -82,9 +82,12 @@ button:active {
 input {
   text-align: center;
   color: #13261f;
-  text-transform: uppercase;
   letter-spacing: 0;
   background: #f7fbff;
+}
+
+#code {
+  text-transform: uppercase;
 }
 
 form {

@@ -12,6 +12,7 @@ app.innerHTML = `
     <div id="status">Offline</div>
   </div>
   <div id="menu" class="panel">
+    <input id="display-name" maxlength="18" autocomplete="nickname" placeholder="Display name" />
     <button id="host" class="primary">Host Game</button>
     <button id="join" class="primary">Join Game</button>
     <form id="join-form" class="hidden">
@@ -30,6 +31,7 @@ const menuEl = document.querySelector<HTMLDivElement>("#menu")!;
 const roomCodeEl = document.querySelector<HTMLDivElement>("#room-code")!;
 const errorEl = document.querySelector<HTMLDivElement>("#error")!;
 const joinForm = document.querySelector<HTMLFormElement>("#join-form")!;
+const displayNameInput = document.querySelector<HTMLInputElement>("#display-name")!;
 const codeInput = document.querySelector<HTMLInputElement>("#code")!;
 
 let socket: WebSocket | null = null;
@@ -163,8 +165,10 @@ new Phaser.Game({
 });
 
 document.querySelector<HTMLButtonElement>("#host")!.addEventListener("click", () => {
+  const displayName = requireDisplayName();
+  if (!displayName) return;
   connect();
-  send({ type: "create_room" });
+  send({ type: "create_room", displayName });
 });
 
 document.querySelector<HTMLButtonElement>("#join")!.addEventListener("click", () => {
@@ -174,9 +178,22 @@ document.querySelector<HTMLButtonElement>("#join")!.addEventListener("click", ()
 
 joinForm.addEventListener("submit", (event) => {
   event.preventDefault();
+  const displayName = requireDisplayName();
+  if (!displayName) return;
   connect();
-  send({ type: "join_room", code: codeInput.value });
+  send({ type: "join_room", code: codeInput.value, displayName });
 });
+
+const requireDisplayName = () => {
+  const displayName = displayNameInput.value.trim();
+  if (displayName) {
+    errorEl.textContent = "";
+    return displayName;
+  }
+  errorEl.textContent = "Enter a display name first";
+  displayNameInput.focus();
+  return null;
+};
 
 const connect = () => {
   if (socket && socket.readyState <= WebSocket.OPEN) return;

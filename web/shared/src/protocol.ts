@@ -16,8 +16,8 @@ export type PlayerInput = {
 };
 
 export type ClientMessage =
-  | { type: "create_room" }
-  | { type: "join_room"; code: string }
+  | { type: "create_room"; displayName: string }
+  | { type: "join_room"; code: string; displayName: string }
   | { type: "input"; sequence: number; input: PlayerInput }
   | { type: "leave_room" }
   | { type: "ping"; sentAt: number };
