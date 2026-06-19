@@ -60,7 +60,14 @@ setInterval(() => {
     }
     if (room.clients.size === 2) {
       stepSimulation(room.sim, 1 / TICK_HZ);
-      broadcast(room, { type: "snapshot", snapshot: room.sim.snapshot });
+      const snapshot = {
+        ...room.sim.snapshot,
+        players: room.sim.snapshot.players.map((player) => ({
+          ...player,
+          displayName: player.controlled ? (room.clients.get(player.team)?.displayName ?? null) : null
+        }))
+      };
+      broadcast(room, { type: "snapshot", snapshot });
     }
   }
 }, 1000 / TICK_HZ);

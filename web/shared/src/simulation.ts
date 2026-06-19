@@ -121,6 +121,7 @@ export const stepSimulation = (sim: Simulation, dt: number) => {
 
 const player = (id: string, team: Team, slot: number, controlled: boolean, x: number, y: number): PlayerState => ({
   id,
+  displayName: null,
   team,
   slot,
   controlled,

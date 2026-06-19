@@ -96,7 +96,7 @@ class MatchScene extends Phaser.Scene {
       sprite.setScale(p.hasBall ? 1.08 : 1);
       const label = this.labels.get(p.id);
       label?.setPosition(p.pos.x, p.pos.y + 35);
-      label?.setText(p.controlled ? (p.team === side ? "YOU" : p.team.toUpperCase()) : p.id.endsWith("keeper") ? "GK" : "AI");
+      label?.setText(p.controlled ? (p.displayName ?? p.team.toUpperCase()) : p.id.endsWith("keeper") ? "GK" : "AI");
     }
 
     this.ball ??= this.add.sprite(snapshot.ball.pos.x, snapshot.ball.pos.y, "ball").setDisplaySize(28, 28);

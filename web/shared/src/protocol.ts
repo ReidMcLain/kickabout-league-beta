@@ -33,6 +33,7 @@ export type ServerMessage =
 
 export type PlayerState = {
   id: string;
+  displayName: string | null;
   team: Team;
   slot: number;
   controlled: boolean;
