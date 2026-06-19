@@ -65,6 +65,7 @@ class MatchScene extends Phaser.Scene {
     this.graphics = this.add.graphics();
     this.cursors = this.input.keyboard?.createCursorKeys();
     this.keys = this.input.keyboard?.addKeys("W,A,S,D,SPACE") as Record<string, Phaser.Input.Keyboard.Key>;
+    this.input.keyboard?.disableGlobalCapture();
   }
 
   update() {
