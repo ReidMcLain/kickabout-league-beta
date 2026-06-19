@@ -162,7 +162,7 @@ const createRoomCode = () => {
 
 const normalizeDisplayName = (value: unknown) => {
   if (typeof value !== "string") return null;
-  const displayName = value.trim().replace(/\s+/g, " ").slice(0, 18);
+  const displayName = value.trim().replace(/\s+/g, " ").slice(0, 20);
   return displayName.length > 0 ? displayName : null;
 };
 

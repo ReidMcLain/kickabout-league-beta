@@ -12,7 +12,7 @@ app.innerHTML = `
     <div id="status">Offline</div>
   </div>
   <div id="menu" class="panel">
-    <input id="display-name" maxlength="18" autocomplete="nickname" placeholder="Display name" />
+    <input id="display-name" maxlength="20" autocomplete="nickname" placeholder="Display name" />
     <button id="host" class="primary">Host Game</button>
     <button id="join" class="primary">Join Game</button>
     <form id="join-form" class="hidden">
